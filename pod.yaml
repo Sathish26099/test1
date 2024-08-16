@@ -1,0 +1,35 @@
+# Deployment Configuration
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load-pod
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: python
+  template:
+    metadata:
+      labels:
+        app: python
+    spec:
+      containers:
+        - name: python
+          image: myimg
+
+---
+
+# LoadBalancer Service Configuration
+apiVersion: v1
+kind: Service
+metadata:
+  name: load
+spec:
+  type: LoadBalancer
+  selector:
+    app: python
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+
