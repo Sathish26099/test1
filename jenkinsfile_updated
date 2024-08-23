@@ -1,0 +1,69 @@
+pipeline {
+    agent any
+    
+       environment {
+        SCANNER_HOME= tool 'sonar'
+    }
+    
+    stages{
+        stage('Git'){
+            steps{
+                git 'https://github.com/Sathish26099/test1'
+            }
+        }
+
+    stage('Trivy'){
+        steps{
+            sh "trivy fs --format table -o trivy-fs-report.html ."
+        }
+    }
+     stage('SONARQUBE ANALYSIS') {
+            steps {
+                withSonarQubeEnv('sonar') {
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=kube -Dsonar.projectKey=kube\
+                            -Dsonar.sources=.'''
+                }
+            }
+        }
+        
+                stage('QUALITY GATE') {
+            steps {
+                script {
+                  waitForQualityGate abortPipeline: false, credentialsId: 'sonar' 
+                }
+            }
+        }
+
+
+ stage('Build'){
+     steps{
+     sh 'sudo docker build -t myimg /var/lib/jenkins/workspace/server/'
+     sh 'sudo docker tag myimg sathish7164879/test:latest'
+      sh 'sudo docker tag myimg sathish7164879/test:${BUILD_NUMBER}'
+ }
+    }
+    
+    stage('push dokcer hub'){
+        steps{
+    withCredentials([usernamePassword(credentialsId: '3a25c13b-1761-483a-bc7c-8991c5b0b43d', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    // Login to Docker Hub
+                    sh 'echo "$DOCKER_PASSWORD" | sudo docker login -u "$DOCKER_USERNAME" --password-stdin'
+                    sh 'sudo docker push sathish7164879/test:latest'
+                    sh 'sudo docker push sathish7164879/test:${BUILD_NUMBER}'
+    }
+    
+    }
+}
+stage('Trivyimage'){
+        steps{
+            sh "trivy image --format table -o trivy-fs-report.html sathish7164879/test:latest "
+        }
+    }
+    stage('Deploydocker'){
+    steps{
+        sh 'sudo docker run -d -p 1234:80 sathish7164879/test:latest'
+    }
+}
+}
+}
+
