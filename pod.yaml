@@ -1,0 +1,38 @@
+Apiversion: apps/v1
+kind: deployment
+metadata:
+- name: my deployment
+spec:
+     replicas: 3
+     selector:
+         matchlabels: 
+               app: apache
+     template:
+         metadata:
+               labels:
+                   app:apache
+        spec:
+            containers:
+                 -  name: apache     
+                    image: sathish7164879/project:latest
+                    imagePullPolicy: Always
+
+---
+
+Apiversion: v1
+kind: service
+metadata:
+- name:  Loadbalancer
+spec:
+    type: load balancer
+    selector:
+        app: apache
+    ports:
+         - name: http
+           port: 80
+           protocal: TCP
+            
+
+
+	
+
